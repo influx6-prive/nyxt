@@ -751,3 +751,5 @@ sometimes yields the wrong result."
 (define-ffi-generic ffi-buffer-cookie-policy (buffer value))
 (define-ffi-generic ffi-set-preferred-languages (buffer value))
 (define-ffi-generic ffi-focused-p (buffer))
+(define-ffi-generic ffi-extension-make-background-view (extension &optional url))
+(define-ffi-generic ffi-extension-delete-background-view (extension))
