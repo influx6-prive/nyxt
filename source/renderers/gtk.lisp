@@ -1505,15 +1505,49 @@ As a second value, return the current buffer index starting from 0."
   (gtk:gtk-clipboard-wait-for-text
    (gtk:gtk-clipboard-get "CLIPBOARD")))
 
-(define-ffi-method ffi-extension-make-background-view ((extension nyxt/web-extensions:extension) &optional url)
-  (unless (nyxt/web-extensions::background-view extension)
-    (let ((view (make-web-view :context-buffer (current-buffer))))
-      (webkit:webkit-web-view-load-uri view (if url
-                                                (render-url (url url))
-                                                "about:blank"))
-      (setf (nyxt/web-extensions::background-view extension) view)
-      (connect-signal view "user-message-received" (web-view message)
-        (process-user-message web-view message)))))
+(defvar %message-channels% (make-hash-table))
+(defvar %current-message-identifier% 1)
 
-(define-ffi-method ffi-extension-delete-background-view ((extension nyxt/web-extensions:extension))
-    (gtk:gtk-widget-destroy (nyxt/web-extensions:background-view extension)))
+(cffi:defcallback message-sent :void ((source-object :pointer) (result :pointer) (user-data :pointer))
+  (let* ((message (webkit:webkit-web-view-send-message-to-page-finish source-object result))
+         (background-buffers (delete-duplicates
+                              (mapcar #'background-buffer
+                                      (sera:filter #'nyxt/web-extensions::extension-p
+                                                   (alex:mappend #'modes (buffer-list))))))
+         (value (process-user-message (find source-object
+                                            (append (buffer-list)
+                                                    background-buffers)
+                                            :key (alex:compose #'g:pointer #'gtk-object))
+                                      message
+                                      :send-reply-p nil)))
+    (unless (cffi:null-pointer-p user-data)
+      (calispel:! (gethash (cffi:pointer-address user-data) %message-channels%)
+                  value))))
+
+(define-ffi-method ffi-buffer-send-message ((buffer gtk-buffer) &key (name "") (contents "") when-loaded-p wait-p)
+  (flet ((send-message ()
+           (let ((new-id (when wait-p (incf %current-message-identifier%))))
+             (when new-id
+               (setf (gethash new-id %message-channels%)
+                     (make-channel 1)))
+             (webkit:webkit-web-view-send-message-to-page
+              (gtk-object buffer)
+              (webkit:webkit-user-message-new
+               name (glib:g-variant-new-string contents))
+              (cffi:null-pointer) (cffi:callback message-sent)
+              (if new-id
+                  (cffi:make-pointer new-id)
+                  (cffi:null-pointer)))
+             (when wait-p
+               (calispel:? (gethash new-id %message-channels%) 10)))))
+    (if (and when-loaded-p
+             (not (eq (slot-value buffer 'load-status) :finished)))
+        (let ((channel (make-channel 1)))
+          (hooks:add-hook (buffer-loaded-hook buffer)
+                          (make-handler-buffer
+                           (lambda (buffer)
+                             (calispel:! channel (send-message))
+                             (hooks:remove-hook (buffer-loaded-hook buffer) 'send-message-when-loaded))
+                           :name 'send-message-when-loaded))
+          (calispel:? channel))
+        (send-message))))
