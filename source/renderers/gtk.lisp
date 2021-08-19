@@ -1191,7 +1191,8 @@ See `gtk-browser's `modifier-translator' slot."
           (json:encode-json-to-string
            (mapcar #'(lambda (extension)
                        (cons (nyxt/web-extensions::name extension)
-                             (nyxt/web-extensions::manifest extension)))
+                             (vector (id extension)
+                                     (nyxt/web-extensions::manifest extension))))
                    extensions))))
         ("management.getSelf"
          (wrap-in-channel
