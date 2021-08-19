@@ -76,7 +76,7 @@ If the URL contains hexadecimal-encoded characters, return their unicode counter
 (defun valid-url-p (url)
   ;; List of URI schemes: https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml
   ;; Last updated 2020-08-26.
-  (let* ((nyxt-schemes '("lisp" "javascript"))
+  (let* ((nyxt-schemes '("lisp" "javascript" "web-extension"))
          (iana-schemes
            '("aaa" "aaas" "about" "acap" "acct" "cap" "cid" "coap" "coap+tcp" "coap+ws"
              "coaps" "coaps+tcp" "coaps+ws" "crid" "data" "dav" "dict" "dns" "example" "file"
