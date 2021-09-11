@@ -70,7 +70,8 @@ after the mode-specific hook.")
                                          :base-url "https://duckduckgo.com/ac/?q=~a"
                                          :processing-function
                                          #'(lambda (results)
-                                             (mapcar #'cdar
+                                             (mapcar (lambda (hash-table)
+                                                       (first (alex:hash-table-values hash-table)))
                                                      (json:decode-json-from-string results))))))
                    :type (cons search-engine *)
                    :documentation "A list of the `search-engine' objects.
