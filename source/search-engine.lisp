@@ -46,7 +46,7 @@ Can be built via `make-search-completion-function'"))
 (defun make-search-completion-function (&key base-url
                                           (request-function #'dex:get)
                                           request-args
-                                          (processing-function #'cl-json:decode-json-from-string))
+                                          (processing-function #'decode-json))
   "Return a function suitable to be a `completion-function' of `search-engine'.
 
 BASE-URL is a one-placeholder format string (e.g.,
@@ -59,7 +59,7 @@ returns. Should return a list of strings.
 Example (Tor-proxied completion function for Wikipedia):
 \(make-search-completion-function
  :base-url \"https://en.wikipedia.org/w/api.php?action=opensearch&format=json&search=~a\"
- :processing-function (alex:compose #'second #'json:decode-json-from-string)
+ :processing-function (alex:compose #'second #'decode-json)
  :request-args '(:proxy \"socks5://localhost:9050\"))"
   #'(lambda (input)
       (funcall processing-function

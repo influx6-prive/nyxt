@@ -60,7 +60,7 @@ after the mode-specific hook.")
                                         :completion-function
                                         (make-search-completion-function
                                          :base-url "https://en.wikipedia.org/w/api.php?action=opensearch&format=json&search=~a"
-                                         :processing-function (alex:compose #'second #'json:decode-json-from-string)))
+                                         :processing-function (alex:compose #'second #'decode-json)))
                          (make-instance 'search-engine
                                         :shortcut "ddg"
                                         :search-url "https://duckduckgo.com/?q=~a"
@@ -72,7 +72,7 @@ after the mode-specific hook.")
                                          #'(lambda (results)
                                              (mapcar (lambda (hash-table)
                                                        (first (alex:hash-table-values hash-table)))
-                                                     (json:decode-json-from-string results))))))
+                                                     (decode-json results))))))
                    :type (cons search-engine *)
                    :documentation "A list of the `search-engine' objects.
 You can invoke them from the prompt-buffer by prefixing your query with SHORTCUT.
